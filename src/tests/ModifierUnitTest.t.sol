@@ -25,34 +25,11 @@ contract SomeContract {
 
 contract ModifierUnitTest is DssTest {
 
-    /**
-     * @dev Runs `checkModifier` through an external call, so a failure inside it can be detected
-     *      here instead of failing this test.
-     *      `checkModifier` reports a failure through forge-std's `fail()`, which flags the test
-     *      rather than reverting, so the flag is what has to be read and then cleared. `fail()`
-     *      records it in two places: in this contract, where reverting the external call rolls it
-     *      back, and in the cheatcode address, which survives the revert and is reset below.
-     */
-    function checkModifierPasses(address _base, bytes4 _fsig) internal returns (bool ok) {
-        bytes4[1] memory fsigs = [_fsig];
-        (ok,) = address(this).call(abi.encodeCall(this.checkModifierExternal, (_base, "SomeContract/bad-state", fsigs)));
-        vm.store(address(vm), bytes32("failed"), bytes32(uint256(0)));
-    }
-
-    /// @dev Only meant to be called by `checkModifierPasses`.
-    function checkModifierExternal(address _base, string memory _revertMsg, bytes4[1] memory _fsigs) external {
-        checkModifier(_base, _revertMsg, _fsigs);
-        require(!failed(), "ModifierUnitTest/check-modifier-failed");
-    }
-
     function test_modifier() public {
         checkModifier(address(new SomeContract()), "SomeContract/bad-state", [SomeContract.withModifier.selector]);
     }
-    function test_modifier_detects_not_present() public {
-        assertFalse(
-            checkModifierPasses(address(new SomeContract()), SomeContract.withoutModifier.selector),
-            "missing modifier accepted"
-        );
+    function testFail_modifier_not_present() public {
+        checkModifier(address(new SomeContract()), "SomeContract/bad-state", [SomeContract.withoutModifier.selector]);
     }
 
 }
