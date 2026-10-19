@@ -99,6 +99,7 @@ contract AuthUnitTest is DssTest {
      *      it queued may still be unmatched, and unmatched expectations are reported when the test
      *      ends, no matter which call registered them. The events `checkAuth` expects are therefore
      *      re-emitted below to consume whatever it left behind.
+     *      `checkAuth` calls `vm.expectRevert` itself, so the test cannot wrap it in another one.
      */
     function checkAuthPasses(address _base) internal returns (bool ok) {
         (ok,) = address(this).call(abi.encodeCall(this.checkAuthExternal, (_base, "AuthContract")));

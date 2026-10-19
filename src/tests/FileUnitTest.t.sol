@@ -174,7 +174,8 @@ contract InvalidFileContractMissingAuth {
 contract FileUnitTest is DssTest {
 
     /// @dev Runs a `checkFile*` helper through an external call, so a failure inside it can be
-    ///      detected here instead of failing this test.
+    ///      detected here instead of failing this test. The helpers call `vm.expectRevert`
+    ///      themselves, so the test cannot wrap them in another one.
     function checkFilePasses(bytes memory _call) internal returns (bool ok) {
         (ok,) = address(this).call(_call);
     }
