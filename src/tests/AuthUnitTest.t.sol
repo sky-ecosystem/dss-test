@@ -92,29 +92,49 @@ contract InvalidAuthContractDeny3 {
 
 contract AuthUnitTest is DssTest {
 
+    /**
+     * @dev Runs `checkAuth` through an external call, so a failure inside it can be detected
+     *      here instead of failing this test.
+     *      `checkAuth` verifies events with `vm.expectEmit`. When it aborts early, an expectation
+     *      it queued may still be unmatched, and unmatched expectations are reported when the test
+     *      ends, no matter which call registered them. The events `checkAuth` expects are therefore
+     *      re-emitted below to consume whatever it left behind.
+     *      `checkAuth` calls `vm.expectRevert` itself, so the test cannot wrap it in another one.
+     */
+    function checkAuthPasses(address _base) internal returns (bool ok) {
+        (ok,) = address(this).call(abi.encodeCall(this.checkAuthExternal, (_base, "AuthContract")));
+        emit Rely(TEST_ADDRESS);
+        emit Deny(TEST_ADDRESS);
+    }
+
+    /// @dev Only meant to be called by `checkAuthPasses`.
+    function checkAuthExternal(address _base, string memory _contractName) external {
+        checkAuth(_base, _contractName);
+    }
+
     function test_auth_valid() public {
         checkAuth(address(new ValidAuthContract()), "AuthContract");
     }
-    function testFail_auth_revert_name() public {
-        checkAuth(address(new InvalidAuthContractRevertName()), "AuthContract");
+    function test_auth_detects_revert_name() public {
+        assertFalse(checkAuthPasses(address(new InvalidAuthContractRevertName())), "unexpected revert name accepted");
     }
-    function testFail_auth_bad_rely1() public {
-        checkAuth(address(new InvalidAuthContractRely1()), "AuthContract");
+    function test_auth_detects_bad_rely1() public {
+        assertFalse(checkAuthPasses(address(new InvalidAuthContractRely1())), "rely not granting auth accepted");
     }
-    function testFail_auth_bad_rely2() public {
-        checkAuth(address(new InvalidAuthContractRely2()), "AuthContract");
+    function test_auth_detects_bad_rely2() public {
+        assertFalse(checkAuthPasses(address(new InvalidAuthContractRely2())), "rely emitting the wrong usr accepted");
     }
-    function testFail_auth_bad_rely3() public {
-        checkAuth(address(new InvalidAuthContractRely3()), "AuthContract");
+    function test_auth_detects_bad_rely3() public {
+        assertFalse(checkAuthPasses(address(new InvalidAuthContractRely3())), "rely emitting Deny accepted");
     }
-    function testFail_auth_bad_deny1() public {
-        checkAuth(address(new InvalidAuthContractDeny1()), "AuthContract");
+    function test_auth_detects_bad_deny1() public {
+        assertFalse(checkAuthPasses(address(new InvalidAuthContractDeny1())), "deny not revoking auth accepted");
     }
-    function testFail_auth_bad_deny2() public {
-        checkAuth(address(new InvalidAuthContractDeny2()), "AuthContract");
+    function test_auth_detects_bad_deny2() public {
+        assertFalse(checkAuthPasses(address(new InvalidAuthContractDeny2())), "deny emitting the wrong usr accepted");
     }
-    function testFail_auth_bad_deny3() public {
-        checkAuth(address(new InvalidAuthContractDeny3()), "AuthContract");
+    function test_auth_detects_bad_deny3() public {
+        assertFalse(checkAuthPasses(address(new InvalidAuthContractDeny3())), "deny emitting Rely accepted");
     }
 
 }

@@ -173,42 +173,70 @@ contract InvalidFileContractMissingAuth {
 
 contract FileUnitTest is DssTest {
 
+    /// @dev Runs a `checkFile*` helper through an external call, so a failure inside it can be
+    ///      detected here instead of failing this test. The helpers call `vm.expectRevert`
+    ///      themselves, so the test cannot wrap them in another one.
+    function checkFilePasses(bytes memory _call) internal returns (bool ok) {
+        (ok,) = address(this).call(_call);
+    }
+
+    /// @dev The three functions below are only meant to be called by `checkFilePasses`.
+    function checkFileUintExternal(address _base, string memory _contractName, string[1] memory _values) external {
+        checkFileUint(_base, _contractName, _values);
+    }
+    function checkFileAddressExternal(address _base, string memory _contractName, string[1] memory _values) external {
+        checkFileAddress(_base, _contractName, _values);
+    }
+    function checkFileStringExternal(address _base, string memory _contractName, string[1] memory _values) external {
+        checkFileString(_base, _contractName, _values);
+    }
+
+    function checkFileUintPasses(address _base) internal returns (bool) {
+        return checkFilePasses(abi.encodeCall(this.checkFileUintExternal, (_base, "FileContract", ["someData"])));
+    }
+    function checkFileAddressPasses(address _base) internal returns (bool) {
+        return checkFilePasses(abi.encodeCall(this.checkFileAddressExternal, (_base, "FileContract", ["vow"])));
+    }
+    function checkFileStringPasses(address _base) internal returns (bool) {
+        return checkFilePasses(abi.encodeCall(this.checkFileStringExternal, (_base, "FileContract", ["someStr"])));
+    }
+
     function test_file_uint_valid() public {
         checkFileUint(address(new ValidFileContract()), "FileContract", ["someData"]);
     }
-    function testFail_file_uint_revert_name() public {
-        checkFileUint(address(new InvalidFileContractRevertName()), "FileContract", ["someData"]);
+    function test_file_uint_detects_revert_name() public {
+        assertFalse(checkFileUintPasses(address(new InvalidFileContractRevertName())), "unexpected revert name accepted");
     }
-    function testFail_file_uint_missing_update() public {
-        checkFileUint(address(new InvalidFileContractMissingUpdate()), "FileContract", ["someData"]);
+    function test_file_uint_detects_missing_update() public {
+        assertFalse(checkFileUintPasses(address(new InvalidFileContractMissingUpdate())), "missing update accepted");
     }
-    function testFail_file_uint_missing_auth() public {
-        checkFileUint(address(new InvalidFileContractMissingAuth()), "FileContract", ["someData"]);
+    function test_file_uint_detects_missing_auth() public {
+        assertFalse(checkFileUintPasses(address(new InvalidFileContractMissingAuth())), "missing auth accepted");
     }
 
     function test_file_address_valid() public {
         checkFileAddress(address(new ValidFileContract()), "FileContract", ["vow"]);
     }
-    function testFail_file_address_revert_name() public {
-        checkFileAddress(address(new InvalidFileContractRevertName()), "FileContract", ["vow"]);
+    function test_file_address_detects_revert_name() public {
+        assertFalse(checkFileAddressPasses(address(new InvalidFileContractRevertName())), "unexpected revert name accepted");
     }
-    function testFail_file_address_missing_update() public {
-        checkFileAddress(address(new InvalidFileContractMissingUpdate()), "FileContract", ["vow"]);
+    function test_file_address_detects_missing_update() public {
+        assertFalse(checkFileAddressPasses(address(new InvalidFileContractMissingUpdate())), "missing update accepted");
     }
-    function testFail_file_address_missing_auth() public {
-        checkFileAddress(address(new InvalidFileContractMissingAuth()), "FileContract", ["vow"]);
+    function test_file_address_detects_missing_auth() public {
+        assertFalse(checkFileAddressPasses(address(new InvalidFileContractMissingAuth())), "missing auth accepted");
     }
 
     function test_file_string_valid() public {
         checkFileString(address(new ValidFileContract()), "FileContract", ["someStr"]);
     }
-    function testFail_file_string_revert_name() public {
-        checkFileString(address(new InvalidFileContractRevertName()), "FileContract", ["someStr"]);
+    function test_file_string_detects_revert_name() public {
+        assertFalse(checkFileStringPasses(address(new InvalidFileContractRevertName())), "unexpected revert name accepted");
     }
-    function testFail_file_string_missing_update() public {
-        checkFileString(address(new InvalidFileContractMissingUpdate()), "FileContract", ["someStr"]);
+    function test_file_string_detects_missing_update() public {
+        assertFalse(checkFileStringPasses(address(new InvalidFileContractMissingUpdate())), "missing update accepted");
     }
-    function testFail_file_string_missing_auth() public {
-        checkFileString(address(new InvalidFileContractMissingAuth()), "FileContract", ["someStr"]);
+    function test_file_string_detects_missing_auth() public {
+        assertFalse(checkFileStringPasses(address(new InvalidFileContractMissingAuth())), "missing auth accepted");
     }
 }
