@@ -25,11 +25,21 @@ contract SomeContract {
 
 contract ModifierUnitTest is DssTest {
 
+    /// @dev `checkModifier` reports a failure through forge-std's `fail()`, which flags the test
+    ///      instead of reverting. Calling this through `this.` turns the flag into a revert that
+    ///      `vm.expectRevert` can catch.
+    function checkModifierExternal(address _base, string memory _revertMsg, bytes4[1] memory _fsigs) external {
+        checkModifier(_base, _revertMsg, _fsigs);
+        require(!failed(), "ModifierUnitTest/check-modifier-failed");
+    }
+
     function test_modifier() public {
         checkModifier(address(new SomeContract()), "SomeContract/bad-state", [SomeContract.withModifier.selector]);
     }
-    function testFail_modifier_not_present() public {
-        checkModifier(address(new SomeContract()), "SomeContract/bad-state", [SomeContract.withoutModifier.selector]);
+    function test_modifier_detects_not_present() public {
+        address someContract = address(new SomeContract());
+        vm.expectRevert("ModifierUnitTest/check-modifier-failed");
+        this.checkModifierExternal(someContract, "SomeContract/bad-state", [SomeContract.withoutModifier.selector]);
     }
 
 }

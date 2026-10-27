@@ -4,12 +4,15 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        # https://github.com/actions/checkout/releases/tag/v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        # https://github.com/foundry-rs/foundry-toolchain/releases/tag/v1.9.1
+        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09
         with:
-          version: v0.3.0
+          version: v1.8.5
 
       - name: Install Dependencies
         run: forge install
